@@ -1,10 +1,26 @@
+/**
+ * @typedef {Object} Card
+ * @property {Number} id - Card id
+ * @property {Number} width - Card width 
+ * @property {String} image - Card top image
+ * @property {Number} ragin - Card rating number from 0 to 5 for start
+ * @property {Boolean} like - Card like state
+ * @property {Boolean} online - Card user online status
+ * @property {String} userName - Card user name
+ * @property {Number} ratingCount - Card rating people count those who voted
+ * @property {String} description - Card descriptions
+ */
+
 (function(cards){
+  // Waiting to ready document
   document.addEventListener('DOMContentLoaded', () => {
     const cardWidth = 250;
 
-    const $container = document.querySelector('.miraslider__slider');
-    const slider = new Slider({ cards, container: $container, cardWidth });
+    // Init cards slider
+    const $slider = document.querySelector('.miraslider__slider');
+    const slider = new Slider({ cards, container: $slider, cardWidth });
 
+    // Init cards list
     const $listContainer = document.querySelector('.miraslider__list');
     if ($listContainer && Array.isArray(cards)) {
       cards.forEach((card) => {
@@ -14,6 +30,11 @@
     }
   });
 
+  /**
+   * Constructor of Card
+   * 
+   * @param {Object<Card>} props 
+   */
   function Card(props) {
     try {
       const {
@@ -21,8 +42,12 @@
         ratingCount, description, width, online, id,
       } = props;
       
-      this.id = id;
+      // Prepare card element
       this.el = document.createElement('div');
+      this.el.className = 'miraslider__card';
+
+      // Prepare Card data
+      this.id = id || Math.floor(Math.random() * 1000);
       this.like = like || false;
       this.width = width || 300;
       this.image = image || 'https://vollrath.com/ClientCss/images/VollrathImages/No_Image_Available.jpg';
@@ -32,8 +57,6 @@
       this.userName = userName || 'anon';
       this.ratingCount = ratingCount || 0;
       this.description = description || '';
-
-      this.el.className = 'miraslider__card';
       
       this.render();
     } catch (error) {
@@ -44,7 +67,8 @@
   Card.prototype.render = function() {
     try {
       const {
-        like, image, price, rating, userName, ratingCount, description, width, online
+        like, image, price, rating, userName,
+        ratingCount, description, width, online,
       } = this;
       const likeClass = like
         ? 'miraslider__card-like miraslider__card-like--on'
@@ -55,9 +79,9 @@
         : 'miraslider__dot miraslider__dot--off'
 
       const templateString = `<div
-        class="miraslider__card-container"
-        style="width:${width}px"
-      >
+          class="miraslider__card-container"
+          style="width:${width}px"
+        >
           <div
             class="miraslider__card-image"
             style="background-image: url(${image})"
@@ -66,21 +90,32 @@
             <div class="miraslider__card-description">
               ${description}
             </div>
+
             <div class="miraslider__card-stats">
               <div class="miraslider__card-user">
                 <span class="${onlineClass}"></span>
                 ${userName}
               </div>
+
               <div class="miraslider__card-stat">
-                <div class="miraslider__card-rating">★ ${rating}</div>
-                <div class="miraslider__card-rating-count">(${ratingCount})</div>
+                <div class="miraslider__card-rating">
+                  ★ ${rating}
+                </div>
+
+                <div class="miraslider__card-rating-count">
+                  (${ratingCount})
+                </div>
               </div>
             </div>
+
             <div class="miraslider__card-footer">
               <div class="${likeClass}">
                 🖤
               </div>
-              <div class="miraslider__card-price">от ${price}₽</div>
+
+              <div class="miraslider__card-price">
+                от ${price}₽
+              </div>
             </div>
           </div>
         </div>`;
@@ -97,16 +132,28 @@
   }
 
   Card.prototype.setEvents = function() {
-    const likeButton = this.el.querySelector('.miraslider__card-like');
+    try {
+      const likeButton = this.el.querySelector('.miraslider__card-like');
 
-    if (likeButton) {
-      likeButton.addEventListener('click', () => {
-        this.like = !this.like;
-        this.render();
-      });
+      if (likeButton) {
+        likeButton.addEventListener('click', () => {
+          this.like = !this.like;
+          this.render();
+        });
+      }
+    } catch (error) {
+      console.error('Card#setEvents()', error.message);
     }
   }
 
+  /**
+   * Constructor of Slider
+   * 
+   * @param {Object} params
+   * @param {Number} params.cardWidth - Reload default (300) cards width
+   * @param {Array<Card>} params.card - Array of cards objects
+   * @param {Object<Node>} params.container - Document element to append slider
+   */
   function Slider(
     { cards, container, cardWidth } = { cards: [], container: null, cardWidth }
   ) {
@@ -134,10 +181,7 @@
       this.render();
 
       // Set event listeners
-      window.onresize = (event) => {
-        this.appendCards();
-      }
-
+      window.onresize = this.appendCards.bind(this);
       this.$leftArrow.addEventListener('click', this.prewPage.bind(this));
       this.$rightArrow.addEventListener('click', this.nextPage.bind(this));
     } catch (error) {
@@ -228,14 +272,16 @@
 
   Slider.prototype.createSkeleton = function() {
     try {
+      const arrowLeftTmpl = '<i class="arrow left"></i>';
+      const arrowRightTmpl = '<i class="arrow right"></i>';
+
       this.$content = createContainer('miraslider__content');
-      this.$leftArrow = createArrow('miraslider__left-arrow', '<i class="arrow left"></i>');
-      this.$rightArrow = createArrow('miraslider__right-arrow', '<i class="arrow right"></i>');
+      this.$leftArrow = createArrow('miraslider__left-arrow', arrowLeftTmpl);
+      this.$rightArrow = createArrow('miraslider__right-arrow', arrowRightTmpl);
 
       this.container.appendChild(this.$leftArrow);
       this.container.appendChild(this.$content);
       this.container.appendChild(this.$rightArrow);
-
 
       function createContainer(className) {
         const $el = document.createElement('div');
